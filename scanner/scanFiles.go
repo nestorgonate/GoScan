@@ -34,7 +34,7 @@ func NewScanFiles() *ScanFiles {
 }
 
 func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error) {
-	fmt.Printf("=====Escaneando la carpeta .minecraft...=====\n")
+	fmt.Printf("=====Scanning .minecraft...=====\n")
 	//Agregar al slice los archivos de interes
 	r.dirsToGet = append(r.dirsToGet, "resourcepacks", "versions", "mods")
 	//Agregar al slice las extensiones de archivos de interes
@@ -42,7 +42,7 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error) 
 	//Obtener la ruta del .minecraft en base al sistema operativo
 	minecraftPath, err := r.utils.GetMinecraftPath()
 	if err != nil {
-		fmt.Printf("Error al obtener el path de Minecraft\n")
+		fmt.Printf("The .minecraft was not scanned\n")
 		return nil, nil, err
 	}
 
@@ -73,16 +73,9 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error) 
 							fileExt := strings.ToLower(filepath.Ext(d.Name()))
 							for _, ext := range r.filesToGet {
 								if strings.TrimPrefix(ext, "*") == fileExt {
-									//Regex para quitar la extension del archivo
-									reExt := regexp.MustCompile(`^(.+)\.[^\.]+$`)
-									nameFileNoExtension := reExt.FindStringSubmatch(d.Name())
-									var nameFile string
-									if len(nameFileNoExtension) > 1 {
-										nameFile = nameFileNoExtension[1]
-									}
 									//Regex para quitar guiones o espacios
 									reDashesSpaces := regexp.MustCompile(`[-_\s]`)
-									nameFileNoDashesSpaces := reDashesSpaces.ReplaceAllString(nameFile, "")
+									nameFileNoDashesSpaces := reDashesSpaces.ReplaceAllString(d.Name(), "")
 									if nameFileNoDashesSpaces != "" {
 										r.filesToScan = append(r.filesToScan, nameFileNoDashesSpaces)
 									}
@@ -92,7 +85,7 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error) 
 						return nil
 					})
 					if err != nil {
-						fmt.Printf("Error al acceder a la carpeta .minecraft %q: %v\n", path, err)
+						fmt.Printf("The program could not open .minecraft %q: %v\n", path, err)
 						return nil
 					}
 					break
@@ -107,7 +100,7 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error) 
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("Error durante el recorrido del directorio: %v", err)
+		fmt.Printf("The directory was not scanned: %v", err)
 		return nil, nil, err
 	}
 	return &r.dirsToScan, &r.filesToScan, nil
@@ -117,7 +110,7 @@ func (r *ScanFiles) ScanPrefetch() (*[]models.PrefetchFile, error){
 	prefetchPath := "C:\\Windows\\Prefetch"
 	files, err := os.ReadDir(prefetchPath)
 	if err != nil{
-		fmt.Printf("Error al leer el prefetch: %v\n", err)
+		fmt.Printf("The scanner : %v\n", err)
 		return nil, err
 	}
 	for _, file := range files{

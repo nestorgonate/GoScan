@@ -67,6 +67,8 @@ func (r *Report) GetMinecraftFileReport(){
 		for _, hack := range r.hackVerified{
 			fmt.Printf("%v\n", hack)
 		}
+		fmt.Printf("Press enter to continue the scan")
+		fmt.Scanln()
 	}
 	fmt.Printf("No cheats were found during the scan\n")
 	fmt.Printf("Analayzed files:\n")
@@ -96,11 +98,12 @@ func (r *Report) GetPrefetchFileReport(){
 		for _, hack := range r.hackVerified{
 			fmt.Printf("Suspicious file was found during the scan: %v\n", hack)
 		}
+		fmt.Print("Press enter to continue the scan")
+		fmt.Scanln()
 	}
-	fmt.Printf("No suspicious files were found during the scan\n")
 	fmt.Printf("Analyzed files:\n")
 	for _, file := range *prefetchScan{
-		fmt.Printf("%v\n", file)
+		fmt.Printf("File name: %v - Last modification: %v\n", file.Name, file.LastModification.Format("2006-01-02 15:04"))
 	}
 	fmt.Printf("=====The prefetch scan is complete=====\n")
 }
