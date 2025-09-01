@@ -3,6 +3,7 @@ package report
 import (
 	scanTool "GoScan/scanner"
 	"fmt"
+	"strings"
 )
 
 type IReport interface {
@@ -22,7 +23,7 @@ func NewReportGet(scan scanTool.IScanFiles) *Report {
 
 func (r *Report) GetMinecraftFileReport() ([]string, error) {
 	r.hackName = append(r.hackName,
-		"Fly",
+		"fly",
 		"KillAura",
 		"AutoClicker",
 		"X-Ray",
@@ -32,12 +33,33 @@ func (r *Report) GetMinecraftFileReport() ([]string, error) {
 		"WallHack",
 		"TriggerBot",
 		"FastPlace",
+		"Wrust",
+		"X-ray",
+		"Xray",
 	)
-	filesToScan, err := r.scan.ScanFilesMinecraftFunc()
+	dirsToScan, filesToScan, err := r.scan.ScanFilesMinecraftFunc()
 	if err != nil {
 		fmt.Printf("Error al escanear la carpeta .minecraft: %v", err)
 		return nil, err
 	}
-	fmt.Printf("filesToScan en GetMinecraftFileReport: %v", filesToScan)
-	return filesToScan, nil
+	//Iterar carpetas
+	for _, dir := range dirsToScan{
+		for _, hack := range r.hackName{
+			if strings.EqualFold(hack, dir){
+				fmt.Printf("Hack encontrado en carpetas: %v\n", dir)
+			}
+		}
+		fmt.Printf("Carpeta encontrada: %v\n", dir)
+	}
+
+	//Iterar archivos
+	for _, file := range filesToScan{
+		for _, hack := range r.hackName{
+			if strings.EqualFold(hack, file){
+				fmt.Printf("Hack encontrado en archivo: %v\n", file)
+			}
+		}
+		fmt.Printf("Archivo encontrado: %v\n", file)
+	}
+	return dirsToScan, nil
 }

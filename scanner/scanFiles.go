@@ -10,37 +10,39 @@ import (
 )
 
 type IScanFiles interface {
-	ScanFilesMinecraftFunc() ([]string, error)
+	ScanFilesMinecraftFunc() ([]string, []string, error)
 }
 type ScanFiles struct {
-	utils               *utils.Utils
-	dirsToGet           []string
-	filesExtensionToGet []string
-	filesToScan         []string
-	re                  regexp.Regexp
+	utils *utils.Utils
+	//Indica el nombre de las carpetas de interes en el .minecraft
+	dirsToGet []string
+	//Almacena el nombre de las carpetas a escanear
+	dirsToScan []string
+	re          regexp.Regexp
+	//Indica la extension de los archivos de interes en el .minecraft
+	filesToGet []string
+	//Almacena el nombre de los archivos a escanear
+	filesToScan []string
 }
 
 func NewScanFiles() *ScanFiles {
 	return &ScanFiles{
 		//Slice vacio
-		dirsToGet:           []string{},
-		filesExtensionToGet: []string{},
-		re:                  *regexp.MustCompile(`[^\\/:]+\.jar$`),
+		re:         *regexp.MustCompile(`^(.+)\.[^\.]+$`),
 	}
 }
 
-func (r *ScanFiles) ScanFilesMinecraftFunc() ([]string, error) {
-	//Agregar al slices los archivos de interes
+func (r *ScanFiles) ScanFilesMinecraftFunc() ([]string, []string, error) {
+	//Agregar al slice los archivos de interes
 	r.dirsToGet = append(r.dirsToGet, "resourcepacks", "versions", "mods")
-	r.filesExtensionToGet = append(r.filesExtensionToGet, "*.jar", "*.zip", "*.dll", "*.exe")
-
 	fmt.Printf("Las carpetas en .minecraft a escanear: %v\n", r.dirsToGet)
-	fmt.Printf("Las extensiones de archivos en .minecraft a escanear: %v\n", r.filesExtensionToGet)
+	//Agregar al slice las extensiones de archivos de interes
+	r.filesToGet = append(r.filesToGet, ".jar", ".exe", ".dll")
 	//Obtener la ruta del .minecraft en base al sistema operativo
 	minecraftPath, err := r.utils.GetMinecraftPath()
 	if err != nil {
 		fmt.Printf("Error al obtener el path de Minecraft\n")
-		return nil, err
+		return nil, nil, err
 	}
 	fmt.Printf("Path de minecraft: %v\n", minecraftPath)
 
@@ -61,21 +63,21 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() ([]string, error) {
 					fmt.Printf("Carpeta a escanear: %v\n", dir)
 					//Iterar la carpeta de interes, al ser ya una carpeta de interes no verifica un nombre en especifico
 					err = filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
-						//Si es un archivo verificar si la extension es de interes para escanear
-						if !d.IsDir() {
-							//filepath.ext retorna al extension del archivo que obtiene de d.Name que retorna el nombre completo del archivo o carpeta
-							extension := strings.ToLower(filepath.Ext(d.Name()))
-							for _, fileExtension := range r.filesExtensionToGet {
-								if strings.TrimPrefix(fileExtension, "*") == extension {
-									cleanNameFile := r.re.FindString(path)
-									if cleanNameFile != "" {
-										r.filesToScan = append(r.filesToScan, cleanNameFile)
-										fmt.Printf("Archivo a escanear: %v\n", cleanNameFile)
+						if d.IsDir() {
+								r.dirsToScan = append(r.dirsToScan, d.Name())
+								fmt.Printf("Slice dirsToScan: %v\n", r.dirsToScan)
+							}else{
+								//filepath.ext retorna al extension del archivo que obtiene de d.Name que retorna el nombre completo del archivo o carpeta
+								fileExt := strings.ToLower(filepath.Ext(d.Name()))
+								for _, ext := range r.filesToGet{
+									if strings.TrimPrefix(ext, "*") == fileExt{
+										cleanedNameFile := r.re.FindStringSubmatch(d.Name())
+										if len(cleanedNameFile) > 1{
+											r.filesToScan = append(r.filesToScan, cleanedNameFile[1])
+										}
 									}
-									break
 								}
 							}
-						}
 						return nil
 					})
 					if err != nil {
@@ -85,7 +87,7 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() ([]string, error) {
 					break
 				}
 			}
-			//Si el directorio es la raiz o no esta en dirsToGet no escanearlo
+			//Si el directorio no es el path de minecraft y no esta en dirsToGet no escanear
 			if !dirIsInDirsToGet && path != minecraftPath {
 				return filepath.SkipDir
 			}
@@ -95,7 +97,7 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() ([]string, error) {
 	})
 	if err != nil {
 		fmt.Printf("Error durante el recorrido del directorio: %v", err)
-		return nil, err
+		return nil, nil, err
 	}
-	return r.filesToScan, nil
+	return r.dirsToScan, r.filesToScan, nil
 }
