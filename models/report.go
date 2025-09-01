@@ -1,4 +1,4 @@
-package report
+package models
 
 type ReportModel struct{
 	NombreArchivo string `json:"nombreArchivo"`

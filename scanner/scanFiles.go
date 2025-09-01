@@ -1,16 +1,19 @@
 package scanTool
 
 import (
+	"GoScan/models"
 	"GoScan/utils"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
 
 type IScanFiles interface {
-	ScanFilesMinecraftFunc() (*[]string, *[]string, error)
+	ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error)
+	ScanPrefetch() (*[]models.PrefetchFile, error)
 }
 type ScanFiles struct {
 	utils *utils.Utils
@@ -21,14 +24,16 @@ type ScanFiles struct {
 	//Indica la extension de los archivos de interes en el .minecraft
 	filesToGet []string
 	//Almacena el nombre de los archivos a escanear
-	filesToScan []string
+	filesToScan []interface{}
+	//Almacenar los archivos del prefetch
+	filesPreftch []models.PrefetchFile
 }
 
 func NewScanFiles() *ScanFiles {
 	return &ScanFiles{}
 }
 
-func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]string, error) {
+func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]interface{}, error) {
 	fmt.Printf("=====Escaneando la carpeta .minecraft...=====\n")
 	//Agregar al slice los archivos de interes
 	r.dirsToGet = append(r.dirsToGet, "resourcepacks", "versions", "mods")
@@ -75,7 +80,6 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]string, error) {
 									if len(nameFileNoExtension) > 1 {
 										nameFile = nameFileNoExtension[1]
 									}
-
 									//Regex para quitar guiones o espacios
 									reDashesSpaces := regexp.MustCompile(`[-_\s]`)
 									nameFileNoDashesSpaces := reDashesSpaces.ReplaceAllString(nameFile, "")
@@ -107,4 +111,25 @@ func (r *ScanFiles) ScanFilesMinecraftFunc() (*[]string, *[]string, error) {
 		return nil, nil, err
 	}
 	return &r.dirsToScan, &r.filesToScan, nil
+}
+
+func (r *ScanFiles) ScanPrefetch() (*[]models.PrefetchFile, error){
+	prefetchPath := "C:\\Windows\\Prefetch"
+	files, err := os.ReadDir(prefetchPath)
+	if err != nil{
+		fmt.Printf("Error al leer el prefetch: %v\n", err)
+		return nil, err
+	}
+	for _, file := range files{
+		if !file.IsDir(){
+			//Obtener informacion del archivo
+			fileInfo, _ := file.Info()
+			r.filesPreftch = append(r.filesPreftch, models.PrefetchFile{
+				Name: file.Name(),
+				LastModification: fileInfo.ModTime(),
+			})
+		}
+		continue
+	}
+	return &r.filesPreftch, nil
 }
